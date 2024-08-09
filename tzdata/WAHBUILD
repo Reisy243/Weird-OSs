@@ -1,0 +1,67 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgname=tzdata
+pkgver=2024a
+tzcode=$pkgver
+tzdata=$pkgver
+pkgrel=1
+pkgdesc='Sources for time zone and daylight saving time data'
+arch=('x86_64')
+url='https://www.iana.org/time-zones'
+license=('LicenseRef-tz')
+optdepends=(
+	'bash: for tzselect'
+	'libc.so: for zdump, zic'
+)
+options=('!emptydirs')
+source=(
+	"$url/repository/releases/tzcode${tzcode}.tar.gz"{,.asc}
+	"$url/repository/releases/${pkgname}${tzdata}.tar.gz"{,.asc}
+)
+sha256sums=(
+	'80072894adff5a458f1d143e16e4ca1d8b2a122c9c5399da482cb68cba6a1ff8'	# tzcode2024a.tar.gz
+	'SKIP'									# tzcode2024a.tar.gz.asc
+	'0d0434459acbd2059a7a8da1f3304a84a86591f6ed69c6248fffa502b6edffe3'	# tzdata2024a.tar.gz
+	'SKIP'									# tzdata2024a.tar.gz.asc
+)
+sha512sums=(
+	'46da8bfa762c7d109db93e5c060789097fc0e1e38bdad5bb8fec886ef47f138bd03b913a743cd5f7e23dc359a72bfd63e7ffc0de199d2b51e6a174361dbdc43c'	# tzcode2024a.tar.gz
+	'SKIP'																	# tzcode2024a.tar.gz.asc
+	'1f09f1b2327cc9e1afc7e9045e83ee3377918dafe1bee2f282b6991828d03b3c70a4d3a17f9207dfb1361bb25bc214a8922a756e84fa114e9ba476226db57236'	# tzdata2024a.tar.gz
+	'SKIP'																	# tzdata2024a.tar.gz.asc
+)
+validpgpkeys=('7E3792A9D8ACF7D633BC1588ED97E90E62AA7E34') # Paul Eggert <eggert@cs.ucla.edu>
+
+timezones=(
+	'africa' 'antarctica' 'asia' 'australasia'
+	'europe' 'northamerica' 'southamerica'
+	'etcetera' 'backward' 'factory'
+)
+
+build() {
+	sed -i "s:sbin:bin:g" Makefile
+	make LFLAGS="$LDFLAGS $LTOFLAGS"
+}
+
+package() {
+	cd "$srcdir"
+
+	# install tzcode stuff
+	make DESTDIR="$pkgdir" install
+
+	# install tzdata stuff
+	./zic -b fat -d "$pkgdir/usr/share/zoneinfo" ${timezones[@]}
+	./zic -b fat -d "$pkgdir/usr/share/zoneinfo/posix" ${timezones[@]}
+	./zic -b fat -d "$pkgdir/usr/share/zoneinfo/right" -L leapseconds ${timezones[@]}
+
+	# This creates the posixrules file. We use New York because POSIX requires the daylight savings time rules to be in accordance with US rules.   
+	./zic -b fat -d "$pkgdir/usr/share/zoneinfo" -p America/New_York
+	install -m644 -t "$pkgdir/usr/share/zoneinfo" iso3166.tab leap-seconds.list zone1970.tab zone.tab SECURITY # zone.tab is depricated and will go soon
+
+	# cleanup
+	rm "$pkgdir/etc/localtime"
+
+	# install license
+	install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
