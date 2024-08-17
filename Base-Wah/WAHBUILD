@@ -1,0 +1,186 @@
+pkgmaintainer='Panwah Team'
+pkgcontributor='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgname='Base-Wah'
+pkgver='Alpha-1.0.0'
+codename='Apple yellow'
+short_codename='yellow'
+pkgrel=1
+pkgdesc='Panwah base package.'
+arch=('x86_64')
+url='https://redwared.github.io/panwah'
+srcurl="https://raw.githubusercontent.com/Reisy243/Werid-OSs/panwah/$pkgname"
+license=('GPL-3.0-or-later')
+groups=('Panwah')
+depends=(
+	# Essentials packages
+	'gcc-libs' 'libc.so' 'bash'
+
+	# POSIX tools
+	'standard-utils' 'file' 'findutils' 'gawk' 'grep' 'procps-ng' 'sed' 'tar'
+
+	# Distro things
+	'licenses' 'wpm' 'panwah-keyring' 'init' 'zsh'
+
+	# standard linux toolset
+	'gettext' 'pciutils' 'psmisc' 'shadow' 'util-linux' 'bzip2' 'gzip' 'xz'
+
+	# Network things
+	'iputils' 'iproute2' 'iana-etc'
+)
+#	libc.so is glibc or musl
+#	standard-utils is busybox or coreutils
+#	init is systemd or busybox init
+optdepends=(
+	'Linux-Wah: Default Panwah Linux kernel'
+	'systemd-sysvcompat: System V compatibility in systemd'
+	'networkmanager: Automatic network configuration and management'
+)
+provides=('BaseOS' 'base')
+backup=(
+	'etc/crypttab'
+	'etc/fstab'
+	'etc/group'
+	'etc/gshadow'
+	'etc/host.conf'
+	'etc/hosts'
+	'etc/issue'
+	'etc/ld.so.conf'
+	'etc/nsswitch.conf'
+	'etc/passwd'
+	'etc/profile'
+	'etc/resolv.conf'
+	'etc/securetty'
+	'etc/shadow'
+	'etc/shells'
+	'etc/subgid'
+	'etc/subuid'
+)
+source=(
+	"$srcurl/crypttab"
+	"$srcurl/env-generator"
+	"$srcurl/fstab"
+	"$srcurl/host.conf"
+	"$srcurl/hosts"
+	"$srcurl/ld.so.conf"
+	"$srcurl/locale.sh"
+	"$srcurl/nsswitch.conf"
+	"$srcurl/os-release"
+	"$srcurl/profile"
+	"$srcurl/resolv.conf"
+	"$srcurl/securetty"
+	"$srcurl/shells"
+	"$srcurl/sysctl"
+	"$srcurl/sysusers"
+	"$srcurl/tmpfiles"
+	"$url/img/wah-logo.png"
+	"$url/img/wah-logo.svg"
+	"$url/img/wah-logo-text.png"
+	"$url/img/wah-logo-text.svg"
+	"$url/img/wah-logo-text-dark.png"
+	"$url/img/wah-logo-text-dark.svg"
+)
+sha256sums=(
+	'b386ce5b52eeda8140e3a2af8b1bfda6ec1e45d397bb63f0740613af04a2e4a1'	# crypttab
+	'ed0cb4f1db4021f8c3b5ce78fdf91d2c0624708f58f36c9cf867f4d93c3bc6da'	# env-generator
+	'1f7ba890491800b5aaced8e4dd505c6344bc678391b6fd211681499aa393eded'	# fstab
+	'4d7b647169063dfedbff5e1e22cee77bd1a4183dbcfd5e802e68939da4bbf733'	# host.conf
+	'114377e5e4eb7312ee2eb69c4126f0352c00ffe851d561290f0f4b587959920b'	# hosts
+	'785c6c3614a27ae6115a27c1ca55bbf333654780997c4ba7e181172b021d1bf3'	# ld.so.conf
+	'acfaac1f884a82c0dff110c13b07ae1be4550f019c6d2c72aa3a6730b2590ea3'	# locale.sh
+	'c8ee7a9faf798caab178ec51afae4146f1efd8a716b7acedf28345b6c75f9697'	# nsswitch.conf
+	'76f2817a47ad360ab8a679b49493b7b9f2338ebc4c2d232078ed204c02baae4b'	# os-release
+	'9d6908cf24a3cfa416e385dd1463c091c3b6375515700b4b14a9121a3f1b57d4'	# profile
+	'07fc22e0c1499bef7d5a0ebdb770a15d98bf5a76fec633b26defea5a2a9c3160'	# resolv.conf
+	'd88be2b45b43605ff31dd83d6a138069b6c2e92bc8989b7b9ab9eba8da5f8c7b'	# securetty
+	'4e43aff5194028ad74faa8fe7f7f00487a969dd471c20fe2662a3f36d4315082'	# shells
+	'2905b91729fd252d50064460862ab78c567ac3c103847e5e10c267d1f85928ca'	# sysctl
+	'c28eb858acf033d6f3b9d4d5af6f1f66c1dc4df3c5e8acce41141f4c87e895f0'	# sysusers
+	'0b8ffe205187508be96ffbff64c711ce3f0d51f77f55c4f386cfbe4a8d75f276'	# tmpfiles
+	'8e167fdd1deb7e14e869759b03703d0c57f090cf060336ad5588cf6b9e400ff9'	# wah-logo.png
+	'9c17a4922e7a1afb2f0c3e407d02c8e21184b1a0af772ad363d0709bf55a7d4b'	# wah-logo.svg
+	'06a37680d44403bc4ec075c87b1ef1e83ab6291c094e1d004f855a28260a50c3'	# wah-logo-text.png
+	'a3efeefbccfe8a5cae1ae51b4e7abb6820d65fc4ab4f33712e7dc38d6a62dadc'	# wah-logo-text.svg
+	'119d53e7fdca8b5e163bdc3bc8fdcfdb8cc86404126722f23cca4311d16e5c76'	# wah-logo-text-dark.png
+	'42b1e3964759d79463ce9cf96ec2eb0cdc4939acdadc1c40b3f65fd69de0aad5'	# wah-logo-text-dark.svg
+)
+
+package(){
+	touch subuid subgid
+
+	echo "Panwah" > wah-release
+	echo 'Panwah \r (\l)' > issue
+	echo 'root:x:0:root' > group
+	echo 'root:::root' > gshadow
+	echo 'root:*:14871::::::' > shadow
+	echo 'root:x:0:0::/var/root:/bin/zsh' > passwd
+
+	sed -i "s|@PKGVER@|${pkgver//-/ }|g" os-release
+	sed -i "s|@NUMVER@|${pkgver#*-}|g" os-release
+	sed -i "s|@CODENAME@|$codename|g" os-release
+	sed -i "s|@URL@|"$url"|g" os-release
+	sed -i "s|@SHCN@|$short_codename|g" os-release
+
+	cd "$pkgdir"
+
+	# Creating root file system
+	install -d -m755 home mnt dev opt var run boot etc usr
+	install -d -m555 proc sys
+	install -d -m1777 tmp
+
+	# Creating /usr hierarchy
+	install -d -m755 usr/{src,bin,include,lib{,/ld.so.conf.d},share/{pixmaps,misc,man/man{1..8}}}
+
+	# Creating /usr/local hierarchy
+	install -d -m755 usr/local/{bin,etc,include,lib,man,sbin,share,src}
+	ln -s ../man usr/local/share/man
+
+	# Configuring /etc and /usr/share/factory/etc
+	install -d -m755 {usr/share/factory/,}etc/{ld.so.conf.d,skel,profile.d}
+
+
+	for file in fstab host.conf hosts ld.so.conf nsswitch.conf resolv.conf securetty shells profile subuid subgid group passwd issue wah-release; do
+		install -m644 $srcdir/$file etc/
+		install -m644 $srcdir/$file usr/share/factory/etc/
+	done
+	for profile in locale.sh; do
+		install -m644 $srcdir/$profile etc/profile.d/
+		install -m644 $srcdir/$profile usr/share/factory/etc/profile.d/
+	done
+	for file in gshadow shadow crypttab; do
+		install -m600 $srcdir/$file etc/
+		install -m600 $srcdir/$file usr/share/factory/etc/
+	done
+	ln -s ../proc/self/mounts etc/mtab
+
+
+	# Configuring /var
+	install -d -m755 var/{cache,local,opt,log/old,lib/misc,empty}
+	install -d -m1777 var/tmp
+	install -d -m0750 var/root
+	ln -s ../run var/run
+	ln -s ../run/lock var/lock
+
+	# /usr/lib files
+	install -m644 $srcdir/os-release usr/lib/os-release
+	install -Dm644 $srcdir/sysctl usr/lib/sysctl.d/10-wah.conf
+	install -Dm644 $srcdir/sysusers usr/lib/sysusers.d/wah.conf
+	install -Dm644 $srcdir/tmpfiles usr/lib/tmpfiles.d/wah.conf
+	install -Dm755 $srcdir/env-generator usr/lib/systemd/system-environment-generators/10-wah
+
+	# Adding bin symlinks
+	ln -s usr/bin bin
+	ln -s usr/bin sbin
+	ln -s bin usr/sbin
+
+	# Adding lib symlinks
+	ln -s usr/lib lib
+	[[ $TARCH = 'x86_64' ]] && {
+		ln -s usr/lib lib64
+		ln -s lib usr/lib64
+	}
+
+	# Adding logos
+	install -D -m644 $srcdir/wah-logo{,-text{,-dark}}{.png,.svg} usr/share/pixmaps
+}

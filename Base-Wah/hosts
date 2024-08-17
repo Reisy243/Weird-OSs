@@ -1,0 +1,8 @@
+# Static table lookup for hostnames.
+# See hosts(5) for details.
+
+# IPv4
+127.0.0.1	localhost localhost.ipv4
+
+# IPv6
+::1		localhost localhost.ipv6
