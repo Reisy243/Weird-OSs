@@ -2,14 +2,19 @@
 RootDir="/tmp/rootfs"
 DBPath="var/lib/wpm"
 CacheDir="var/cache/wpm/pkg"
+ConfigDir="etc"
 
 if [ "$RootDir" = "/" ]; then	
 	DBPath="/$DBPath"
 	CacheDir="/$CacheDir"
+	ConfigDir="/$ConfigDir/wpm"
 else
 	DBPath="$RootDir/$DBPath"
 	CacheDir="$RootDir/$CacheDir"
+	ConfigDir="$RootDir/$ConfigDir/wpm"
 fi
+
+export GNUPGHOME="$ConfigDir/gpg"
 
 SyncDir="$DBPath/sync"
 LocalDir="$DBPath/local"
@@ -183,6 +188,10 @@ install_wah(){
 
 	echo
 
+	if [ ! -d "$GNUPGHOME" ]; then
+		mkdir -p "$GNUPGHOME"
+	fi
+
 	for ((ins=${#pkgs[@]}-1; ins>=0; ins--));do
 		downloadfile="$(basename $(se_wah ${pkgs[ins]} | grep '^FILE:' | cut -d ':' -f2))"
 		if [ -f "$downloadfile" ] && [ -f "$downloadfile.sig" ]; then
@@ -279,6 +288,7 @@ deps_wah(){
 				ERROR "Dependence '$cdep' not found"
 			else
 				find=true
+				unset sdep
 			fi
 		fi
 
