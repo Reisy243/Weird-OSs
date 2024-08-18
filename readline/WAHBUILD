@@ -1,0 +1,7 @@
+pkgname='readline'
+pkgver='8.2'
+pkgrel=1
+pkgdesc='GNU readline library'
+arch=('x86_64')
+url="https://tiswww.case.edu/php/chet/$pkgname/rltop.html"
+license=('GPL-3.0-only')

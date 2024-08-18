@@ -102,6 +102,13 @@ search_wah(){
 					echo -e "\e[0;32murl: \e[0;37m$(echo "$wah_tmp" | grep "^URL:" | sed 's/^URL://')"
 				fi
 				echo -e "\e[0;32mArchitecture: \e[0;33m$(echo "$wah_tmp" | grep "^ARCH:" | cut -d ':' -f2)\e[0;37m"
+				backIFS="$IFS"
+				IFS=","
+				echo "\e[0;32mLicenses:"
+				for li in $(echo "$wah_tmp" | grep "^LICENSES:" | cut -d ':' -f2); do
+					echo "	$li"
+				done
+				IFS=$backIFS
 				if ! [ -z "$(echo "$wah_tmp" | grep "^DESC:" | cut -d ':' -f2)" ]; then
 					echo -e "\e[0;32mDescription: \e[0;37m$(echo "$wah_tmp" | grep "^DESC:" | cut -d ':' -f2)"
 				fi
