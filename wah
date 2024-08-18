@@ -104,7 +104,7 @@ search_wah(){
 				echo -e "\e[0;32mArchitecture: \e[0;33m$(echo "$wah_tmp" | grep "^ARCH:" | cut -d ':' -f2)\e[0;37m"
 				backIFS="$IFS"
 				IFS=","
-				echo "\e[0;32mLicenses:"
+				echo -e "\e[0;32mLicenses:\e[0;37m"
 				for li in $(echo "$wah_tmp" | grep "^LICENSES:" | cut -d ':' -f2); do
 					echo "	$li"
 				done
