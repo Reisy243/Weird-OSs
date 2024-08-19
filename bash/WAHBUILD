@@ -58,12 +58,15 @@ prepare() {
 build() {
 	cd $pkgname-$pkgver
 
-	export CFLAGS="${CFLAGS}
+	bashcfg=(
 		-DDEFAULT_PATH_VALUE=\'\"/usr/local/sbin:/usr/local/bin:/usr/bin\"\'
 		-DSTANDARD_UTILS_PATH=\'\"/usr/bin\"\'
 		-DSYS_BASHRC=\'\"/etc/bash/bashrc\"\'
 		-DSYS_BASH_LOGOUT=\'\"/etc/bash/bash_logout\"\'
-		-DNON_INTERACTIVE_LOGIN_SHELLS"
+		-DNON_INTERACTIVE_LOGIN_SHELLS
+	)
+
+	export CFLAGS="${CFLAGS} ${bashcfg[@]}"
 
 	./configure \
 		--prefix=/usr \
