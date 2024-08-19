@@ -59,11 +59,11 @@ build() {
 	cd $pkgname-$pkgver
 
 	bashcfg=(
-		-DDEFAULT_PATH_VALUE=\'\"/usr/local/sbin:/usr/local/bin:/usr/bin\"\'
-		-DSTANDARD_UTILS_PATH=\'\"/usr/bin\"\'
-		-DSYS_BASHRC=\'\"/etc/bash/bashrc\"\'
-		-DSYS_BASH_LOGOUT=\'\"/etc/bash/bash_logout\"\'
-		-DNON_INTERACTIVE_LOGIN_SHELLS
+		"-DDEFAULT_PATH_VALUE='\"/usr/local/sbin:/usr/local/bin:/usr/bin\"'"
+		"-DSTANDARD_UTILS_PATH='\"/usr/bin\"'"
+		"-DSYS_BASHRC='\"/etc/bash/bashrc\"'"
+		"-DSYS_BASH_LOGOUT='\"/etc/bash/bash_logout\"'"
+		"-DNON_INTERACTIVE_LOGIN_SHELLS"
 	)
 
 	export CFLAGS="${CFLAGS} ${bashcfg[@]}"
