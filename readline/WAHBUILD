@@ -1,0 +1,48 @@
+pkgname='readline'
+pkgver='8.2'
+pkgrel=1
+pkgdesc='GNU readline library'
+arch=('x86_64')
+url="https://tiswww.case.edu/php/chet/$pkgname/rltop.html"
+srcurl="https://raw.githubusercontent.com/Reisy243/Weird-OSs/panwah/$pkgname"
+license=('GPL-3.0-only')
+backup=('etc/inputrc')
+depends=('lib'{c,ncursesw.so} 'ncurses')
+provides=(lib{history,$pkgname}.so)
+options=('!emptydirs')
+source=(
+	"https://ftp.gnu.org/gnu/$pkgname/$pkgname-$pkgver.tar.gz"{,.sig}
+	"$srcurl/inputrc"
+)
+sha256sums=(
+	'3feb7171f16a84ee82ca18a36d7b9be109a52c04f492a053331d7d1095007c35'	# readline-8.2.tar.gz
+	'SKIP'									# readline-8.2.tar.gz.sig
+	'36e9611f935ee108d161587b0615f9c390192ef4bbff6dc59b58671261029901'	# inputrc
+)
+b2sums=(
+	'7974322b9c092a756a79e537df08e8532f8e0fcb598f77732e28287c33ebec9e9837ed88b43334c310892d56a871b423903f0f564def2fbe700a1004f2ae7b18'	# readline-8.2.tar.gz
+	'SKIP'																	# readline-8.2.tar.gz.sig
+	'50db43bff430f282175aba4c4259e0b2222bc7e342fbe47b9dcce0172458472e72aebb9852eeafa4d10d4e89f2e1e8bb83b6b5dfc68eeababe699d4b5eae80f7'	# inputrc
+)
+validpgpkeys=('7C0135FB088AAF6C66C650B9BB5869F064EA74AB')	# Chet Ramey
+
+prepare(){
+	# remove RPATH from shared objects
+	sed -i 's|-Wl,-rpath,$(libdir) ||g' $pkgname-$pkgver/support/shobj-conf
+}
+
+build(){
+	cd $pkgname-$pkgver
+
+	# build with -fPIC for x86_64
+	[[ $CARCH == 'x86_64' ]] && CFLAGS="$CFLAGS -fPIC"
+
+	./configure --prefix=/usr
+
+	make SHLIB_LIBS=-lncurses
+}
+
+package(){
+	make -C $pkgname-$pkgver DESTDIR="$pkgdir" install
+	install -Dm644 inputrc "$pkgdir/etc/inputrc"
+}
