@@ -1,0 +1,99 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgname='bash'
+pkgver='5.2'
+pkgrel=1
+pkgdesc='The GNU Bourne Again shell'
+arch=('x86_64')
+license=('GPL-3.0-or-later')
+url="https://www.gnu.org/software/$pkgname/$pkgname.html"
+srcurl="https://raw.githubusercontent.com/Reisy243/Weird-OSs/panwah/$pkgname"
+depends=('readline' 'libreadline.so' 'libc' 'ncurses')
+optdepends=('bash-completion: for tab completion')
+provides=('sh')
+install=$pkgname.install
+source=(
+	"https://ftp.gnu.org/gnu/$pkgname/$pkgname-$pkgver.tar.gz"{,.sig}
+	"$pkgname-${pkgver}"{_p15-{configure-clang16,random-ub},_p21-{configure-strtold,wpointer-to-int},_p32-memory-leaks}'.patch'
+	"$srcurl/"{dot,system}.bashrc
+	"$srcurl/dot.bash_profile"
+)
+sha256sums=(
+	'a139c166df7ff4471c5e0733051642ee5556c1cc8a4a78f145583c5c81ab32fb'	# bash-5.2.tar.gz
+	'SKIP'									# bash-5.2.tar.gz.sig
+	'b0ba61c471dc6728f101edc2f1accf1d066fdf6a56011b0265d0344a32900f21'	# bash-5.2_p15-configure-clang16.patch
+	'd2b81eb19f691f129d3203db0ac6c1db441b8e832fb22fb7a6a30c2e9bd3b868'	# bash-5.2_p15-random-ub.patch
+	'9038e9942e0d3b234e14bc082672b79875a7fc57a31f862f3194186aef32598c'	# bash-5.2_p21-configure-strtold.patch
+	'77b1796ec4d70de4e838751004ee0b206e1edc719a45b692c6d5a1623ede64b9'	# bash-5.2_p21-wpointer-to-int.patch
+	'8bfa20770ffb0fc408e5b7db96baf8db857aed3e1eb943e41df5ccf2925c5cf0'	# bash-5.2_p32-memory-leaks.patch
+	'363a45e55dc7c763a68c9f2486f4b58de5f5108e4e7686528296266dcb786afa'	# dot.bashrc
+	'ea3e6650e7db270e5b30b5bf9ff12968d80c29d532c336d8e47796c0a6d56a02'	# system.bashrc
+	'03440d7701aaed176de345c5b3714e02eb25d591a559b3b55261f990fed2bd7d'	# dot.bash_profile
+)
+b2sums=(
+	'51b196e710794ebad8eac28c31c93eb99ac1a7db30919a13271e39e1cb66a0672f242df75fc7d71627ea873dfbce53ec35c0c56a71c5167143070a7811343fd9'	# bash-5.2.tar.gz
+	'SKIP'																	# bash-5.2.tar.gz.sig
+	'5ef332cd2847f46e351e5db6dda79d01d9853f5eda9762deeba0450c2bd400eec549bbb85696777b687f64d0977daac4883d6ce3f1e26cec0d5f73e8ee97f000'	# bash-5.2_p15-configure-clang16.patch
+	'adab09c3f2ce3697e3659e01266120155714b80263bd125808edf556a354291af615540189553b1c32a2d462ac41e28a9df8fb9f7d963a3ca3629d297a46e62d'	# bash-5.2_p15-random-ub.patch
+	'83ec6ff756543ee44c18902f2d30dd662a84237b9594a7e0cfc21a1c16fce49e37cf67729b3a17d59cc978cb6675e04457e3b6b0909d94cb234a1dde96f7c9ea'	# bash-5.2_p21-configure-strtold.patch
+	'0c7f5eb5b697abf15c1d17888a973e44d0ead1f095778b41841a6a1937a5b9e7ce5fa6a05e4404504990b0a244fdecfc12ce7c33ee7d67b4c837435e9bfe2b57'	# bash-5.2_p21-wpointer-to-int.patch
+	'373aa3be1f0a6bc65403cde63cbc4dcd612336e86b1cae918670a99e8ca639c665ac7efb467ec8823a62cec0a71c485bd3fda4bbf058d759498377f5cfe90f51'	# bash-5.2_p32-memory-leaks.patch
+	'1a33d65beca60f1206ea81c64c8fdfe67b7dee2ab8d16eacc80c55c37927b7424d747e2c8e328be016e035e2044c2bc2758ad2bbb5ed55cb3017304861b172f1'	# dot.bashrc
+	'4f6fd9cbe1df7e619da280c911a7f48c27673541577d8160f8fb59310ea3ba1c096f95fa62e50f699717dd59b824dc9890d3a8f48de5a9e63e6efadafe96361a'	# system.bashrc
+	'aaea8456ff2eafc4fbdc5cebe9a93ae82f78c062460ba1d94b02cd727384efe7f6a9fdf98d2c3ca8201dcfe08ce2827c2ad7bc47b63ff63ee408604cdc5c29a7'	# dot.bash_profile
+)
+validpgpkeys=('7C0135FB088AAF6C66C650B9BB5869F064EA74AB')	# Chet Ramey
+
+prepare() {
+	cd $pkgname-$pkgver
+
+	# add patches from gentoo, fixing various upstream reported issues
+	# https://gitweb.gentoo.org/repo/gentoo.git/tree/app-shells/bash/files
+	for patch in {15-{configure-clang16,random-ub},21-{configure-strtold,wpointer-to-int},32-memory-leaks}; do
+		patch -Np0 -i ../$pkgname-${pkgver}_p${patch}.patch
+	done
+}
+
+build() {
+	cd $pkgname-$pkgver
+
+	export CFLAGS="${CFLAGS}
+		-DDEFAULT_PATH_VALUE=\'\"/usr/local/sbin:/usr/local/bin:/usr/bin\"\'
+		-DSTANDARD_UTILS_PATH=\'\"/usr/bin\"\'
+		-DSYS_BASHRC=\'\"/etc/bash/bashrc\"\'
+		-DSYS_BASH_LOGOUT=\'\"/etc/bash/bash_logout\"\'
+		-DNON_INTERACTIVE_LOGIN_SHELLS"
+
+	./configure \
+		--prefix=/usr \
+		--with-curses \
+		--enable-readline \
+		--without-bash-malloc \
+		--with-installed-readline
+
+	make
+}
+
+check() {
+	make -C $pkgname-$pkgver check
+}
+
+package() {
+	make -C $pkgname-$pkgver DESTDIR="$pkgdir" install
+
+	ln -s bash "$pkgdir/usr/bin/sh"
+	ln -s bash "$pkgdir/usr/bin/rbash"
+
+	# system-wide configuration files
+	install -Dm644 system.bashrc "$pkgdir/etc/bash/bashrc"
+	echo '# ~/.bash_logout' > system.bash_logout
+	install -Dm644 system.bash_logout "$pkgdir/etc/bash/bash_logout"
+
+	# user configuration file skeletons
+	install -dm755 "$pkgdir/etc/skel/"
+	install -m644 dot.bashrc "$pkgdir/etc/skel/.bashrc"
+	install -m644 dot.bash_profile "$pkgdir/etc/skel/.bash_profile"
+	echo '# ~/.bash_logout' > dot.bash_logout
+	install -m644 dot.bash_logout "$pkgdir/etc/skel/.bash_logout"
+}
