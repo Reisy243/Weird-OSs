@@ -7,6 +7,7 @@ pkgrel=1
 pkgdesc='System V Release 4.0 curses emulation library'
 arch=('x86_64')
 url="https://invisible-island.net/$pkgname/$pkgname.html"
+srcurl="https://raw.githubusercontent.com/Reisy243/Weird-OSs/panwah/$pkgname"
 license=('MIT-open-group')
 depends=('libc' 'gcc-libs')
 makedepends=('autoconf-archive')
@@ -15,7 +16,7 @@ optdepends=('bash: for ncursesw6-config')
 replaces=({alacritty,rio,wezterm}-terminfo)
 source=(
 	"https://invisible-island.net/archives/$pkgname/$pkgname-$pkgver.tar.gz"{,.asc}
-	"$pkgname-6.3"-{libs,pkgconfig}.patch
+	"$srcurl/$pkgname-6.3"-{libs,pkgconfig}.patch
 )
 sha256sums=(
 	'136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6'	# ncurses-6.5.tar.gz
