@@ -9,7 +9,7 @@ arch=('x86_64')
 url="https://www.$pkgname.net"
 srcurl="https://raw.githubusercontent.com/Reisy243/Weird-OSs/panwah/WahBuilds/$pkgname"
 license=('GPL-2.0-only')
-provides=('init' 'standard-utils' 'wget' 'mdev' 'udev' 'vi')
+provides=('standard-utils' 'udev')
 depends=('libc.so')
 groups=('Panwah')
 optdepends=('libudev-zero')
@@ -63,7 +63,10 @@ package(){
 	# Generating README
 	install "$srcdir/README.txt" "$pkgdir/usr/share/doc/$pkgname/README"
 	sed -i "s|@PKGVER@|$pkgver|g" "$pkgdir/usr/share/doc/$pkgname/README"
-	./busybox --list >> "$pkgdir/usr/share/doc/$pkgname/README"
+	for applet in $(./busybox --list); do
+		echo $applet >> "$pkgdir/usr/share/doc/$pkgname/README"
+		provides+=("$applet")
+	done
 
 	# init example custom files
 	cd "$srcdir"
