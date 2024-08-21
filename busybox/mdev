@@ -1,0 +1,19 @@
+#!/bin/sh
+MDEV="/sbin/mdev"
+
+# Mount file systems neded by mdev
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs none /dev
+
+# Mount /dev/pts for pseudo-terminals
+if [ ! -d /dev/pts ]; then
+	mkdir /dev/pts
+fi
+mount -t devpts devpts /dev/pts
+
+# Configure mdev as the device manager
+echo "$MDEV" > /proc/sys/kernel/hotplug
+
+# Execute mdev
+$MDEV -s

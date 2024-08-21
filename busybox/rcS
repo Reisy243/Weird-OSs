@@ -1,0 +1,6 @@
+#!/bin/sh
+mount -a
+mount -t tmpfs tmpfs /tmp
+if [ -f /etc/hostname ]; then
+	hostname -F /etc/hostname
+fi

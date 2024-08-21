@@ -1,0 +1,72 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgname='busybox'
+pkgver='1.36.1'
+pkgrel=1
+pkgdesc='Compact and efficient collection of standard Unix utilities.'
+arch=('x86_64')
+url="https://www.$pkgname.net"
+srcurl="https://raw.githubusercontent.com/Reisy243/Weird-OSs/panwah/WahBuilds/$pkgname"
+license=('GPL-2.0-only')
+provides=('init' 'standard-utils' 'wget' 'mdev' 'udev' 'vi')
+depends=('libc.so')
+groups=('Panwah')
+optdepends=('libudev-zero')
+source=(
+	"$url/downloads/$pkgname-$pkgver.tar.bz2"
+	"$srcurl/$pkgname-$pkgver.config"
+	"$srcurl/inittab.wah"
+	"$srcurl/README.txt"
+	"$srcurl/rcS"
+	"$srcurl/mdev"
+)
+sha256sums=(
+	'b8cc24c9574d809e7279c3be349795c5d5ceb6fdf19ca709f80cde50e47de314'	# busybox-1.36.1.tar.bz2
+	'd8f453953d3f2924d254540eb1e0479e1c6ff4d723fb770adc742592064bd93c'	# busybox-1.36.1.config
+	'c36106faf1cf592629285a6daa8f960e673f59b9540160fe52a2e9c6eeb5769a'	# inittab.wah
+	'17eabc7a1a13e1eba435bf1ebed5e4060a5b3f1b64bf6cb43a6117cf25323d80'	# README.txt
+	'4a6fc870814da14ec65778e37c42efe917b579ff15a188515d109aadd2481c3e'	# rcS
+	'cbe605c160cd0ce89dd901a8a867e2bccf70c97680918710ba45d25d3cdf37c6'	# mdev
+)
+
+build(){
+	cd $pkgname-$pkgver
+	cp "$srcdir/$pkgname-$pkgver.config" .config
+
+	# reproducible build
+	export KCONFIG_NOTIMESTAMP=1
+	make
+}
+
+package(){
+	cd "$pkgname-$pkgver"
+
+	# Documentation
+	install -Dm644 docs/$pkgname.1 "$pkgdir/usr/share/man/man1/$pkgname.1"
+	install -dm0755 "$pkgdir/usr/share/doc/$pkgname"
+	mkdir -p $pkgdir/usr/share/man/man1
+	cp -a examples "$pkgdir/usr/share/doc/$pkgname/"
+	for doc in BusyBox.html BusyBox.txt; do
+		install -Dm644 docs/$doc "$pkgdir/usr/share/doc/$pkgname/$doc"
+	done
+
+	# Binaries
+	install -D $pkgname "$pkgdir/usr/share/doc/$pkgname/$pkgname"
+	install -D "0_lib/$pkgname" "$pkgdir/usr/bin/$pkgname"
+	install -D "0_lib/lib$pkgname.so.$pkgver" "$pkgdir/usr/lib/lib$pkgname.so.$pkgver"
+
+	# Fixing "must be suid to work properly" on su
+	chmod u+s "$pkgdir/usr/bin/$pkgname"
+	chmod u+s "$pkgdir/usr/share/doc/$pkgname/$pkgname"
+
+	# Generating README
+	install "$srcdir/README.txt" "$pkgdir/usr/share/doc/$pkgname/README"
+	sed -i "s|@PKGVER@|$pkgver|g" "$pkgdir/usr/share/doc/$pkgname/README"
+	./busybox --list >> "$pkgdir/usr/share/doc/$pkgname/README"
+
+	# init example custom files
+	cd "$srcdir"
+	install -m644 inittab.wah "$pkgdir/usr/share/doc/$pkgname/examples/"
+	install -m755 rcS mdev "$pkgdir/usr/share/doc/$pkgname/examples/"
+}
