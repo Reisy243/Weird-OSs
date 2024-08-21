@@ -1,0 +1,44 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgname='xz'
+pkgver='5.6.2'
+pkgrel=1
+arch=('x86_64')
+pkgdesc='Library and command line tools for XZ and LZMA compressed files'
+url="https://tukaani.org/$pkgname"
+license=('GPL' 'LGPL' 'custom')
+depends=('sh')
+makedepends=('po4a' 'doxygen')
+provides=("liblzma.so" "$pkgname-utils")
+source=("https://github.com/tukaani-project/$pkgname/releases/download/v$pkgver/$pkgname-$pkgver.tar.gz"{,.sig})
+sha256sums=(
+	'8bfd20c0e1d86f0402f2497cfa71c6ab62d4cd35fd704276e3140bfb71414519'	# xz-5.6.2.tar.gz
+	'SKIP'									# xz-5.6.2.tar.gz.sig
+)
+sha512sums=(
+	'c32c32c95e3541b906e0284e66a953ace677e0ce6af2084e7b122600047bf7542c1b0fabb5909b19ff79fba6def530be674df1c675b22a47a8d57f3f0b736a82'	# xz-5.6.2.tar.gz
+	'SKIP'																	# xz-5.6.2.tar.gz.sig
+)
+validpgpkeys=('3690C240CE51B4670D30AD1C38EE757D69184620')	# Lasse Collin <lasse.collin@tukaani.org>
+
+build(){
+	cd $pkgname-$pkgver
+	./autogen.sh
+	./configure \
+		--prefix=/usr \
+		--disable-rpath \
+		--enable-doxygen \
+		--enable-werror
+	make
+}
+
+check() {
+	make -C $pkgname-$pkgver check
+}
+
+package() {
+	make DESTDIR="$pkgdir" -C $pkgname-$pkgver install
+	install -d -m0755 "$pkgdir/usr/share/licenses/$pkgname/"
+	ln -sf /usr/share/doc/$pkgname/COPYING "$pkgdir/usr/share/licenses/$pkgname/"
+}
