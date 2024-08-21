@@ -1,0 +1,65 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgname='bzip2'
+pkgver='1.0.8'
+pkgrel=1
+pkgdesc='A high-quality data compression program'
+arch=('x86_64')
+license=('BSD')
+url="https://sourceware.org/$pkgname"
+depends=('libc.so' 'sh')
+provides=('libbz2.so')
+source=(
+	"https://sourceware.org/pub/$pkgname/$pkgname-$pkgver.tar.gz"{,.sig}
+	"$pkgname.pc"
+)
+sha256sums=(
+	'ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269'	# bzip2-1.0.8.tar.gz
+	'SKIP'									# bzip2-1.0.8.tar.gz.sig
+	'eca9d8cd6376df1fb5442667c603032023fb21d8d183684550da0b96ade39654'	# bzip2.pc
+)
+validpgpkeys=('EC3CFE88F6CA0788774F5C1D1AA44BE649DE760A')	# Mark Wielaard <mark@klomp.org>
+
+prepare() {
+	cd $pkgname-$pkgver
+	cp ../$pkgname.pc $pkgname.pc
+	sed "s|@VERSION@|$pkgver|" -i $pkgname.pc
+}
+
+build() {
+	cd $pkgname-$pkgver
+
+	make -f Makefile-libbz2_so CC="gcc $CFLAGS $CPPFLAGS $LDFLAGS"
+	make $pkgname bzip2recover CC="gcc $CFLAGS $CPPFLAGS $LDFLAGS"
+}
+
+check() {
+	make -C $pkgname-$pkgver test
+}
+
+package() {
+	cd $pkgname-$pkgver
+
+	install -dm755 "$pkgdir/usr"/{bin,lib,include,share/man/man1}
+
+	install -m755 $pkgname-shared "$pkgdir/usr/bin/$pkgname"
+	install -m755 ${pkgname}recover bz{diff,grep,more} "$pkgdir/usr/bin"
+	for bz in bzcat bunzip2; do
+		ln -sf $pkgname "$pkgdir/usr/bin/$bz"
+	done
+
+	cp -a libbz2.so* "$pkgdir/usr/lib"
+	ln -s libbz2.so.$pkgver "$pkgdir/usr/lib/libbz2.so"
+	ln -s libbz2.so.$pkgver "$pkgdir/usr/lib/libbz2.so.1"	# For compatibility with some other distros
+
+	install -m644 bzlib.h "$pkgdir/usr/include/"
+
+	install -m644 $pkgname.1 "$pkgdir/usr/share/man/man1/"
+	for man in bunzip2 bzcat ${pkgname}recover; do
+		ln -sf $pkgname.1 "$pkgdir/usr/share/man/man1/$man.1"
+	done
+
+	install -Dm644 $pkgname.pc -t "$pkgdir/usr/lib/pkgconfig"
+	install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
