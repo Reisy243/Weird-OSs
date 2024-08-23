@@ -1,0 +1,55 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgbase='libseccomp'
+pkgname=("$pkgbase" "python3-$pkgbase")
+pkgver='2.5.5'
+pkgrel=1
+pkgdesc='Enhanced seccomp library'
+arch=('x86_64')
+license=('LGPL2.1')
+url="https://github.com/${pkgbase#lib}/$pkgbase"
+depends=('libc')
+checkdepends=('valgrind')
+makedepends=('gperf' 'cython3' 'python3-setuptools')
+source=("$url/releases/download/v$pkgver/$pkgbase-$pkgver.tar.gz"{,.asc})
+sha256sums=(
+	'248a2c8a4d9b9858aa6baf52712c34afefcf9c9e94b76dce02c1c9aa25fb3375'	# libseccomp-2.5.5.tar.gz
+	'SKIP'									# libseccomp-2.5.5.tar.gz.asc
+)
+b2sums=(
+	'd770cee1f3e02fbbcd9f25655b360ab38160ad800e2829a67f2b9da62b095a90be99ac851a67344cf95bd6810a6268da4655dc1d37d996e58239c4999eb41998'	# libseccomp-2.5.5.tar.gz
+	'SKIP'																	# libseccomp-2.5.5.tar.gz.asc
+)
+validpgpkeys=(
+	'7100AADFAE6E6E940D2E0AD655E45A5AE8CA7C8A'	# Paul Moore <paul@paul-moore.com>
+	'47A68FCE37C7D7024FD65E11356CE62C2B524099'	# Tom Hromatka <tom.hromatka@oracle.com>
+)
+
+build() {
+	cd $pkgbase-$pkgver
+
+	autoreconf -fiv
+	./configure --prefix=/usr
+
+	make
+	cd src/python
+	env VERSION_RELEASE=$pkgver python3 setup.py build
+}
+
+check() {
+	make -C $pkgbase-$pkgver check
+}
+
+package_libseccomp() {
+	provides=("$pkgname.so")
+	cd $pkgbase-$pkgver
+	make DESTDIR="$pkgdir" install
+	install -Dm 644 CHANGELOG README.md SECURITY.md -t "$pkgdir/usr/share/doc/$pkgname"
+}
+
+package_python3-libseccomp() {
+	depends=('python3')
+	cd $pkgbase-$pkgver/src/python
+	env VERSION_RELEASE=$pkgver python3 setup.py install --root="${pkgdir}" --prefix=/usr -O1 --skip-build
+}
