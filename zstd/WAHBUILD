@@ -1,0 +1,71 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgname='zstd'
+pkgver='1.5.6'
+pkgrel=1
+pkgdesc='Zstandard - Fast real-time compression algorithm'
+url="https://facebook.github.io/$pkgname"
+arch=('x86_64')
+license=(
+	'BSD-3-Clause'
+	'GPL-2.0-only'
+)
+depends=(
+	'libc'
+	'gcc-libs'
+	'zlib'
+	'xz'
+	'lz4'
+)
+makedepends=(
+	'cmake'
+)
+provides=("lib$pkgname.so")
+source=("https://github.com/facebook/$pkgname/releases/download/v$pkgver/$pkgname-$pkgver.tar.gz"{,.sig})
+sha256sums=(
+	'8c29e06cf42aacc1eafc4077ae2ec6c6fcb96a626157e0593d5e82a34fd403c1'	# zstd-1.5.5.tar.gz
+	'SKIP'									# zstd-1.5.5.tar.gz.sig
+)
+b2sums=(
+	'fe17cf0950f8ee2cc07bfa2b41e97f36a1832e396386cb94a55bede975dc974920578cf147b39eecbc5b53ff06fe0dc1fe781a4cab9bc9f767ea28c0e786422e'	# zstd-1.5.5.tar.gz
+	'SKIP'																	# zstd-1.5.5.tar.gz
+)
+validpgpkeys=('4EF4AC63455FC9F4545D9B7DEF8FE99528B52FFD')	# Zstandard Release Signing Key <signing@zstd.net>
+
+prepare() {
+	cd $pkgname-$pkgver
+	# avoid error on tests without static libs, we use LD_LIBRARY_PATH
+	sed '/build static library to build tests/d' -i build/cmake/CMakeLists.txt
+	sed 's/libzstd_static/libzstd_shared/g' -i build/cmake/tests/CMakeLists.txt
+}
+
+build() {
+	cd $pkgname-$pkgver
+	export CFLAGS+=' -ffat-lto-objects'
+	export CXXFLAGS+=' -ffat-lto-objects'
+
+	cmake -S build/cmake -B build \
+		-DCMAKE_BUILD_TYPE=None \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DZSTD_ZLIB_SUPPORT=ON \
+		-DZSTD_LZMA_SUPPORT=ON \
+		-DZSTD_LZ4_SUPPORT=ON \
+		-DZSTD_BUILD_CONTRIB=ON \
+		-DZSTD_BUILD_STATIC=OFF \
+		-DZSTD_BUILD_TESTS=ON \
+		-DZSTD_PROGRAMS_LINK_SHARED=ON
+
+	make -C build
+}
+
+check() {
+	cd $pkgname-$pkgver
+	LD_LIBRARY_PATH="$PWD/build/lib" make -C build test
+}
+
+package() {
+	cd $pkgname-$pkgver
+	make DESTDIR="$pkgdir" -C build install
+	install -Dm 644 LICENSE -t "$pkgdir/usr/share/licenses/$pkgname"
+}
