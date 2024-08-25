@@ -1,3 +1,6 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
 pkgname='lz4'
 pkgver='1.10.0'
 pkgrel=1
