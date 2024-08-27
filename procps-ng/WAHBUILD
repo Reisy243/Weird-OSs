@@ -1,3 +1,6 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
 pkgname='procps-ng'
 pkgver='4.0.4'
 pkgrel=1
