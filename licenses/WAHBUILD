@@ -1,3 +1,6 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
 pkgname='licenses'
 upstream_name='license-list-data'
 pkgver='20240728'
