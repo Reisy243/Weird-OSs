@@ -1,0 +1,55 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgname='mpfr'
+pkgver='4.2.1'
+pkgrel=1
+pkgdesc='Multiple-precision floating-point library'
+arch=('x86_64')
+url="https://www.$pkgname.org"
+license=(
+	'GPL-3.0-or-later'
+	'LGPL-3.0-or-later'
+)
+depends=(
+	'libc.so'
+	'gmp'
+)
+provides=("lib$pkgname.so")
+source=("https://ftp.gnu.org/gnu/$pkgname/$pkgname-$pkgver.tar.gz"{,.sig})
+sha256sums=(
+	'116715552bd966c85b417c424db1bbdf639f53836eb361549d1f8d6ded5cb4c6'	# mpfr-4.2.1.tar.gz
+	'SKIP'									# mpfr-4.2.1.tar.gz.sig
+)
+sha512sums=(
+	'858b7c2c3018e4099a7cd6d9d38eca7c46af90fa2c307d9417518027f07b6c43c51152c60b56359a53e7101a5d0629753f3eb5c54e17574742c374830832fcfe'	# mpfr-4.2.1.tar.gz
+	'SKIP'																	# mpfr-4.2.1.tar.gz.sig
+)
+b2sums=(
+	'6f082ed181929b5d7d2ffcb8a53e21f2256ef69dfc2e3d73a1df37d7b14437f16d370f862e1c6f653778f72fb4d0a2e5f06b20433aad7c0ed5c82c9c9711cd86'	# mpfr-4.2.1.tar.gz
+	'SKIP'																	# mpfr-4.2.1.tar.gz.sig
+)
+validpgpkeys=(
+	'07F3DBBECC1A39605078094D980C197698C3739D'	# Vincent Lefevre <vincent@vinc17.net>
+	'A534BE3F83E241D918280AEB5831D11A0D4DB02A'	# Vincent Lefevre <vincent@vinc17.net>
+)
+
+build() {
+	cd $pkgname-$pkgver
+	./configure \
+		--prefix=/usr \
+		--enable-thread-safe \
+		--enable-shared
+
+	make
+}
+
+check() {
+	cd $pkgname-$pkgver
+	make check
+	make check-exported-symbols
+}
+
+package() {
+	make DESTDIR="$pkgdir" -C $pkgname-$pkgver install
+}
