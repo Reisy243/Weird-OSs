@@ -1,0 +1,46 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgname='gmp'
+pkgver='6.3.0'
+pkgrel=1
+pkgdesc='A free library for arbitrary precision arithmetic'
+arch=('x86_64')
+url="https://${pkgname}lib.org"
+depends=(
+	gcc-libs
+	libc.so
+)
+license=(
+	'GPL-2.0-or-later'
+	'LGPL-3.0-or-later'
+)
+source=("$url/download/$pkgname/$pkgname-$pkgver.tar.gz"{,.sig})
+sha256sums=(
+	'e56fd59d76810932a0555aa15a14b61c16bed66110d3c75cc2ac49ddaa9ab24c'	# gmp-6.3.0.tar.gz
+	'SKIP'									# gmp-6.3.0.tar.gz.sig
+)
+validpgpkeys=('343C2FF0FBEE5EC2EDBEF399F3599FF828C67298')	# Niels Möller
+
+build() {
+	cd $pkgname-$pkgver
+	# Enable shadow stack support
+	LDFLAGS+=' -Wl,-z,shstk' ./configure \
+		--build=${THOST} \
+		--prefix=/usr \
+		--enable-cxx \
+		--enable-fat
+
+	# Fix overlinking
+	sed -i -e 's/ -shared / -Wl,-O1,--as-needed\0/g' libtool
+
+	make
+}
+
+check() {
+	make -C $pkgname-$pkgver check
+}
+
+package() {
+	make DESTDIR="$pkgdir" -C $pkgname-$pkgver install
+}
