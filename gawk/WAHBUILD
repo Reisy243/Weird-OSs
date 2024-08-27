@@ -1,3 +1,6 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
 pkgname='gawk'
 pkgver='5.3.0'
 pkgrel=1
