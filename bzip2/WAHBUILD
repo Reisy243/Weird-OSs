@@ -8,11 +8,12 @@ pkgdesc='A high-quality data compression program'
 arch=('x86_64')
 license=('BSD')
 url="https://sourceware.org/$pkgname"
+srcurl="https://raw.githubusercontent.com/Reisy243/Weird-OSs/panwah/$pkgname"
 depends=('libc.so' 'sh')
 provides=('libbz2.so')
 source=(
 	"https://sourceware.org/pub/$pkgname/$pkgname-$pkgver.tar.gz"{,.sig}
-	"$pkgname.pc"
+	"$srcurl/$pkgname.pc"
 )
 sha256sums=(
 	'ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269'	# bzip2-1.0.8.tar.gz
