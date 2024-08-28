@@ -54,7 +54,7 @@ build(){
 }
 
 check(){
-	cd $pkgbase-$pkgver
+	cd $pkgname-$pkgver
 
 	# the test fails due to missing write permissions in /etc/ssl
 	# revert this patch for make test
