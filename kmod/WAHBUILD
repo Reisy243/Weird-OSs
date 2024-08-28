@@ -1,0 +1,79 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgname='kmod'
+pkgver='33'
+pkgrel=1
+pkgdesc='Linux kernel module management tools and library'
+arch=('x86_64')
+url="https://git.kernel.org/pub/scm/utils/kernel/$pkgname/$pkgname.git"
+srcurl="https://raw.githubusercontent.com/Reisy243/Weird-OSs/panwah/$pkgname"
+license=('LGPL-2.1-or-later' 'GPL-2.0-or-later')
+depends=('libc' 'zlib' 'openssl' 'xz' 'zstd')
+makedepends=('scdoc')
+checkdepends=('linux-headers' 'libelf')
+options=('strip')
+provides=("lib$pkgname.so")
+source=(
+	"https://www.kernel.org/pub/linux/utils/kernel/$pkgname/$pkgname-$pkgver.tar."{gz,sign}
+	"$srcurl/depmod"{-search.conf,.{hook,script}}
+)
+sha256sums=(
+	'd7c59c76bb3dd0eeeecdb1302365cf4bd5cb54e977be43a00efa2c96c519c1dc'	# kmod-33.tar.gz
+	'SKIP'									# kmod-33.tar.sign
+	'60ebf5de45c534fb2d3f42f884b941cf712917b557379aa586dd4220bcc9c4d4'	# depmod-search.conf
+	'96127d20ab7757509d6e582a1641d51f68ce703b3b838677e943d085f1b99b4e'	# depmod.hook
+	'a16abfef6ecfdc08a225b9eb4a49d0b7910f1006812990c8f32d75058a7a4817'	# depmod.script
+)
+validpgpkeys=('EAB33C9690013C733916AC839BA2A5A630CBEA53')	# Lucas De Marchi <lucas.demarchi@intel.com>
+
+prepare(){
+	cd $pkgname-$pkgver
+
+	touch lib$pkgname/docs/gtk-doc.make
+	autoreconf --force --install --symlink
+}
+
+build(){
+	cd $pkgname-$pkgver
+
+	./configure \
+		--sysconfdir='/etc' \
+		--with-xz \
+		--with-zlib \
+		--with-zstd \
+		--with-openssl
+
+	make
+}
+
+check(){
+	# As of kmod v20, the test suite needs to build some kernel modules, and thus
+	# needs headers available in order to run. We depend on linux-headers, but
+	# this is really only to try and make sure that *some* useable tree of kernel
+	# headers exist. The first useable tree we find is good enough, as these
+	# modules will never be loaded by tests.
+	local kdirs=(/usr/lib/modules/*/build/Makefile)
+	if [[ ! -f "${kdirs[0]}" ]]; then
+		printf '==> Unable to find kernel headers to build modules for tests\n' >&2
+		return 1
+	fi
+
+	local kver kdir="${kdirs[0]%/Makefile}"
+	IFS=/ read _ _ _ kver _ <<<"${kdir}"
+	make -C $pkgname-$pkgver check KDIR="$kdir" KVER="$kver"
+}
+
+package(){
+	make -C $pkgname-$pkgver DESTDIR="$pkgdir" install
+
+	# extra directories
+	install -dm0755 "$pkgdir"/{etc,usr/lib}/{depmod,modprobe}.d
+
+	# install depmod.d file for search/ dir
+	install -Dm0644 depmod-search.conf "$pkgdir/usr/lib/depmod.d/search.conf"
+
+	# hook
+	install -Dm0644 depmod.hook "$pkgdir/usr/share/wpm/hooks/60-depmod.hook"
+	install -Dm0755 depmod.script "$pkgdir/usr/share/wpm/scripts/depmod"
+}
