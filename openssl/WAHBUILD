@@ -35,7 +35,7 @@ prepare(){
 	cd $pkgname-$pkgver
 
 	# set ca dir to /etc/ssl by default
-	patch -Np1 -i "$srcdir/ca-dir.patch"
+	patch -Np1 -i ../ca-dir.patch
 }
 
 build(){
@@ -58,11 +58,11 @@ check(){
 
 	# the test fails due to missing write permissions in /etc/ssl
 	# revert this patch for make test
-	patch -Rp1 -i "$srcdir/ca-dir.patch"
+	patch -Rp1 -i ../ca-dir.patch
 
 	make HARNESS_JOBS=$(nproc) test
 
-	patch -Np1 -i "$srcdir/ca-dir.patch"
+	patch -Np1 -i ../ca-dir.patch
 	# re-run make to re-generate CA.pl from the patched .in file.
 	make apps/CA.pl
 }
