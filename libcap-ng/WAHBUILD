@@ -1,0 +1,66 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgbase='libcap-ng'
+pkgname=("$pkgbase" "python3-capng")
+pkgver='0.8.5'
+pkgrel=1
+pkgdesc='A library for Linux that makes using posix capabilities easy'
+arch=('x86_64')
+url="https://people.redhat.com/sgrubb/$pkgbase"
+license=(
+	'GPL-2.0-or-later'
+	'LGPL-2.1-or-later'
+)
+depends=('libc')
+makedepends=(
+	'python3'
+	'swig'
+)
+source=("https://github.com/stevegrubb/$pkgbase/archive/v$pkgver/$pkgname-$pkgver.tar.gz")
+sha256sums=('e4be07fdd234f10b866433f224d183626003c65634ed0552b02e654a380244c2')									# libcap-ng-0.8.5.tar.gz
+sha512sums=('3bd868c7f263b77edd2feda831470b407f1086b434618e54336fb78bbf8bf3bad53f4c006a2118fb594b16554f8f7ec2acb76e08be5586d0261684e9ba139231')	# libcap-ng-0.8.5.tar.gz
+b2sums=('70d70da50aff6423cf98cc87512d691308ec73e4143b4deb4bbc32e764db856af60d2aab2fed6ead2c5662adccb1ebf3a72bc1a8990261e104b28d2b9225cf92')	# libcap-ng-0.8.5.tar.gz
+
+_pick() {
+	local p="$1" f d; shift
+	for f; do
+		d="$srcdir/$p/${f#$pkgdir/}"
+		mkdir -p "$(dirname "$d")"
+		mv "$f" "$d"
+		rmdir -p --ignore-fail-on-non-empty "$(dirname "$f")"
+	done
+}
+
+build() {
+	cd $pkgbase-$pkgver
+	touch NEWS
+	autoreconf -fiv
+
+	./configure --prefix=/usr \
+		--enable-static=no \
+		--with-python3 \
+		--without-python
+
+	make
+}
+
+check() {
+	make check -C $pkgbase-$pkgver
+}
+
+package_libcap-ng() {
+	provides=("$pkgname.so" "libdrop_ambient.so")
+
+	make DESTDIR="$pkgdir" install -C $pkgbase-$pkgver
+	cd "$pkgdir"
+	_pick python-capng usr/lib/python*
+}
+
+package_python3-capng() {
+	pkgdesc+=' (Python 3 bindings)'
+	depends+=("$pkgbase"{,.so} "python3")
+	provides=("python-"{capng,$pkgbase})
+
+	mv -v python-capng/* "$pkgdir"
+}
