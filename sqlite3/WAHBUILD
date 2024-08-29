@@ -1,0 +1,155 @@
+pkgmaintainer='Isaac David Orozco Delgado (Reisy RedPanda) <opensrcrdp@gmail.com>'
+pkgrepo='System'
+
+pkgbase='sqlite'
+pkgname=("$pkgbase"3{,-{tcl,analyzer,doc}} "lemon")
+pkgver='3.46.1'
+srcver=3460100
+docver=$srcver
+pkgrel=1
+pkgdesc='A C library that implements an SQL database engine'
+arch=('x86_64')
+license=('LicenseRef-Sqlite')
+url="https://www.$pkgbase.org"
+srcurl="https://raw.githubusercontent.com/Reisy243/Weird-OSs/panwah/$pkgbase"
+depends=('libc')
+makedepends=('tcl' 'readline' 'zlib')
+options=('!emptydirs')
+source=(
+	"$url/2024"/$pkgbase-{src-$srcver,doc-$docver}.zip
+	"$srcurl/$pkgbase-lemon-system-template.patch"
+	"$srcurl/license.txt"
+)
+sha256sums=(
+	'def3fc292eb9ecc444f6c1950e5c79d8462ed5e7b3d605fd6152d145e1d5abb4'	# sqlite-src-3460100.zip
+	'e969131f93ca79fbc64d57724a1035735881555a52600dbe69c69eab72c9fcd1'	# sqlite-doc-3460100.zip
+	'55746d93b0df4b349c4aa4f09535746dac3530f9fd6de241c9f38e2c92e8ee97'	# sqlite-lemon-system-template.patch
+	'4e57d9ac979f1c9872e69799c2597eeef4c6ce7224f3ede0bf9dc8d217b1e65d'	# license.txt
+)
+
+prepare() {
+	cd $pkgbase-src-$srcver
+
+	# patch taken from Fedora
+	# https://src.fedoraproject.org/rpms/sqlite/blob/master/f/sqlite.spec
+	patch -Np1 -i ../$pkgbase-lemon-system-template.patch
+}
+
+build(){
+	# this uses malloc_usable_size, which is incompatible with fortification level 3
+	export CFLAGS="${CFLAGS/_FORTIFY_SOURCE=3/_FORTIFY_SOURCE=2}"
+	export CXXFLAGS="${CXXFLAGS/_FORTIFY_SOURCE=3/_FORTIFY_SOURCE=2}"
+
+	export CPPFLAGS="$CPPFLAGS \
+		-DSQLITE_ENABLE_COLUMN_METADATA=1 \
+		-DSQLITE_ENABLE_UNLOCK_NOTIFY \
+		-DSQLITE_ENABLE_DBSTAT_VTAB=1 \
+		-DSQLITE_ENABLE_FTS3_TOKENIZER=1 \
+		-DSQLITE_ENABLE_FTS3_PARENTHESIS \
+		-DSQLITE_SECURE_DELETE \
+		-DSQLITE_ENABLE_STMTVTAB \
+		-DSQLITE_ENABLE_STAT4 \
+		-DSQLITE_MAX_VARIABLE_NUMBER=250000 \
+		-DSQLITE_MAX_EXPR_DEPTH=10000 \
+		-DSQLITE_ENABLE_MATH_FUNCTIONS"
+
+	cd $pkgbase-src-$srcver
+	./configure --prefix=/usr \
+		--disable-static \
+		--enable-fts3 \
+		--enable-fts4 \
+		--enable-fts5 \
+		--enable-rtree \
+		TCLLIBDIR=/usr/lib/$pkgbase$pkgver
+
+	sed -i -e 's/ -shared / -Wl,-O1,--as-needed\0/g' libtool
+
+	make
+
+	# build additional tools
+	make showdb showjournal showstat4 showwal sqldiff sqlite3_analyzer
+}
+
+package_sqlite3() {
+	depends+=('readline' 'zlib')
+	provides=("$pkgbase=$pkgver" 'lib$pkgname.so')
+	replaces=("$pkgbase")
+
+	cd $pkgbase-src-$srcver
+
+	make DESTDIR="$pkgdir" install
+	install -m755 showdb showjournal showstat4 showwal sqldiff "$pkgdir/usr/bin/"
+
+	# install manpage
+	install -m755 -d "$pkgdir/usr/share/man/man1"
+	install -m644 sqlite3.1 "$pkgdir/usr/share/man/man1/"
+
+	# license
+	install -D -m644 ../license.txt "$pkgdir/usr/share/licenses/$pkgname/license.txt"
+
+	# split out tcl extension
+	mkdir ../tcl
+	mv "$pkgdir/usr/lib"/sqlite* ../tcl
+}
+
+package_sqlite3-tcl() {
+	pkgdesc='sqlite Tcl Extension Architecture (TEA)'
+	depends+=("${pkgbase}3")
+	provides=("$pkgbase-tcl=$pkgver")
+	replaces=("$pkgbase-tcl")
+
+	install -m755 -d "$pkgdir/usr/lib"
+	mv tcl/* "$pkgdir/usr/lib"
+
+	# install manpage
+	install -m755 -d "$pkgdir/usr/share/man/mann"
+	install -m644 "$srcdir/$pkgbase-src-$srcver/autoconf/tea/doc/sqlite3.n" "$pkgdir/usr/share/man/mann/"
+
+	# license
+	install -D -m644 license.txt "$pkgdir/usr/share/licenses/$pkgname/license.txt"
+}
+
+package_sqlite3-analyzer() {
+	pkgdesc='An analysis program for sqlite3 database files'
+	depends+=('sqlite' 'tcl')
+
+	cd $pkgbase-src-$srcver
+	install -m755 -d "$pkgdir/usr/bin"
+	install -m755 sqlite3_analyzer "$pkgdir/usr/bin/"
+
+	# license
+	install -D -m644 ../license.txt "$pkgdir/usr/share/licenses/$pkgname/license.txt"
+}
+
+package_sqlite3-doc() {
+	pkgdesc='most of the static HTML files that comprise this website, including all of the SQL Syntax and the C/C++ interface specs and other miscellaneous documentation'
+	arch=('any')
+	depends=()
+	provides=("$pkgbase-doc=$pkgver")
+	replaces=("$pkgbase-doc")
+
+	cd $pkgbase-doc-$docver
+	mkdir -p "$pkgdir/usr/share/doc/$pkgbase"
+	cp -R *  "$pkgdir/usr/share/doc/$pkgbase/"
+
+	rm "$pkgdir/usr/share/doc/$pkgbase/lemon.html"
+
+	# license
+	install -D -m644 ../license.txt "$pkgdir/usr/share/licenses/$pkgname/license.txt"
+}
+
+package_lemon() {
+	pkgdesc='A parser generator'
+	url+='/lemon.html'
+
+	cd $pkgbase-src-$srcver
+	# ELF file ('usr/bin/lemon') lacks FULL RELRO, check LDFLAGS. - no fix found so far
+	install -Dm755 $pkgname "$pkgdir/usr/bin/$pkgname"
+	install -Dm644 lempar.c "$pkgdir/usr/share/lemon/lempar.c"
+
+	mkdir -p "$pkgdir/usr/share/doc/$pkgname"
+	cp ../$pkgbase-doc-$docver/$pkgname.html  "$pkgdir/usr/share/doc/$pkgname/"
+
+	# license
+	install -D -m644 ../license.txt "$pkgdir/usr/share/licenses/$pkgname/license.txt"
+}
