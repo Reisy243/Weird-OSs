@@ -72,7 +72,7 @@ build(){
 
 package_sqlite3() {
 	depends+=('readline' 'zlib')
-	provides=("$pkgbase=$pkgver" 'lib$pkgname.so')
+	provides=("$pkgbase=$pkgver" "lib$pkgname.so")
 	replaces=("$pkgbase")
 
 	cd $pkgbase-src-$srcver
