@@ -1,0 +1,54 @@
+pkgbase='libxcrypt'
+pkgname=("$pkgbase"{,-compat})
+pkgver='4.4.36'
+pkgrel=1
+pkgdesc='Modern library for one-way hashing of passwords'
+arch=('x86_64')
+url="https://github.com/besser82/$pkgbase"
+license=('LGPL')
+depends=('libc')
+provides=('libcrypt.so')
+install="$pkgbase.install"
+source=("$url/releases/download/v$pkgver/$pkgbase-$pkgver.tar.xz"{,.asc})
+sha256sums=(
+	'e5e1f4caee0a01de2aee26e3138807d6d3ca2b8e67287966d1fefd65e1fd8943'	# libxcrypt-4.4.36.tar.xz
+	'SKIP'									# libxcrypt-4.4.36.tar.xz.asc
+)
+validpgpkeys=('678CE3FEE430311596DB8C16F52E98007594C21D')	# Björn 'besser82' Esser (besser82@fedoraproject.org) <besser82@fedoraproject.org>
+
+build() {
+	mkdir build-$pkgbase{,-compat}
+
+	cd build-$pkgbase
+	"$srcdir/$pkgbase-$pkgver/configure" --prefix=/usr \
+		--disable-static \
+		--enable-hashes=strong,glibc \
+		--enable-obsolete-api=no \
+		--disable-failure-tokens
+	make
+
+	cd ../build-$pkgbase-compat
+	"$srcdir/$pkgbase-$pkgver/configure" --prefix=/usr \
+		--disable-static \
+		--enable-hashes=strong,glibc \
+		--enable-obsolete-api=glibc \
+		--disable-failure-tokens
+	make
+}
+
+check() {
+	make -C build-$pkgbase check
+	make -C build-$pkgbase-compat check
+}
+
+package_libxcrypt() {
+	make -C build-$pkgname DESTDIR="$pkgdir" install
+}
+
+package_libxcrypt-compat() {
+	pkgdesc='Modern library for one-way hashing of passwords - legacy API functions'
+	depends=("$pkgbase")
+
+	make -C build-$pkgname DESTDIR="$pkgdir" install
+	rm -rf "$pkgdir/usr"/{include,lib/{lib*.so,pkgconfig},share}
+}
