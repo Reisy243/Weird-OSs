@@ -46,6 +46,8 @@ else
 	inspkgs=()
 fi
 
+pkgs=()
+
 se_wah(){
 	if ! [ -f "$SyncDir/$reponame.db" ]; then
 		ERROR "use $0 sync"
@@ -149,7 +151,6 @@ install_wah(){
 	fi
 	cd $CacheDir
 
-	pkgs=()
 	for pkg in $@; do
 		insta=true
 		if ! [ "$pkg" = "$1" ]; then
@@ -295,7 +296,8 @@ deps_wah(){
 				ERROR "Dependence '$cdep' not found"
 			else
 				find=true
-				unset sdep
+				continue
+				#unset sdep
 			fi
 		fi
 
@@ -312,7 +314,10 @@ deps_wah(){
 
 				if $agrrega; then
 					pkgs+=("$sdep")
+					unset sdep
 				fi
+				echo $agrrega . $sdep .
+
 				IFS=","
 				for depdep in $(se_wah $sdep | grep '^DEPS:' | cut -d ':' -f2); do
 					deps_wah $depdep
@@ -321,6 +326,7 @@ deps_wah(){
 			fi
 		fi
 		sdep=""
+		unset agrrega
 	done
 }
 
