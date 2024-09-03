@@ -14,7 +14,11 @@ else
 	ConfigDir="$RootDir/$ConfigDir/wpm"
 fi
 
-export GNUPGHOME="$ConfigDir/gpg"
+export GNUPGHOME="$ConfigDir/gnupg"
+
+if [ ! -d "$GNUPGHOME" ]; then
+	mkdir -p "$GNUPGHOME"
+fi
 
 SyncDir="$DBPath/sync"
 LocalDir="$DBPath/local"
@@ -40,13 +44,13 @@ if [ -d "$LocalDir" ]; then
 			done
 		fi
 	done
-
-	#inspkgs=($(ls $LocalDir))
 else
 	inspkgs=()
 fi
 
-pkgs=()
+nextpkgs=()
+nofind=()
+WahVer="2.0"
 
 se_wah(){
 	if ! [ -f "$SyncDir/$reponame.db" ]; then
@@ -141,129 +145,19 @@ sync_wah(){
 	wget $repourl/$reponame.db -qO $reponame.db	--show-progress
 }
 
-install_wah(){
-	if [ $# -lt 2 ]; then
-		ERROR "Use $0 install [pkgs]"
-	fi
-
-	if ! [ -d $CacheDir ]; then
-		mkdir -p $CacheDir
-	fi
-	cd $CacheDir
-
-	for pkg in $@; do
-		insta=true
-		if ! [ "$pkg" = "$1" ]; then
-			spkg="$(se_wah $pkg)"
-
-			for installed in ${inspkgs[@]}; do
-				if [ "$installed" = "$pkg" ]; then
-					insta=false
-					echo "$pkg is already installed"
-				fi
-			done
-
-			if $insta; then
-				if ! [ -z "$(echo $spkg | grep '^PKG:' | cut -d ':' -f2)" ]; then
-					pkgs+=("$(echo "$spkg" | grep '^PKG:' | cut -d ':' -f2)")
-
-					if ! [ -z "$(echo "$spkg" | grep '^DEPS:' | cut -d ':' -f2)" ]; then
-						IFS=","
-						deps_wah $(echo "$spkg" | grep '^DEPS:' | cut -d ':' -f2)
-					fi
-				else
-					echo $spkg
-					exit 1
-				fi
-			fi
-		fi
-	done
-
-	for ((ins=${#pkgs[@]}-1; ins>=0; ins--));do
-
-		downloadfile="$(se_wah ${pkgs[ins]} | grep '^FILE:' | cut -d ':' -f2)"
-		if [ -f "$(basename $downloadfile)" ]; then
-			rm $(basename $downloadfile)
-		fi
-
-		if [ -f "$(basename $downloadfile).sig" ]; then
-			rm $(basename $downloadfile).sig
-		fi
-
-		wget "$repourl/$downloadfile" -qO $(basename $downloadfile)	--show-progress
-		wget "$repourl/$downloadfile.sig" -qO $(basename $downloadfile).sig
-	done
-
-	echo
-
-	if [ ! -d "$GNUPGHOME" ]; then
-		mkdir -p "$GNUPGHOME"
-	fi
-
-	for ((ins=${#pkgs[@]}-1; ins>=0; ins--));do
-		downloadfile="$(basename $(se_wah ${pkgs[ins]} | grep '^FILE:' | cut -d ':' -f2))"
-		if [ -f "$downloadfile" ] && [ -f "$downloadfile.sig" ]; then
-			gpg --verify $downloadfile.sig $downloadfile 2>/dev/null
-			gpg_exit_code=$?
-
-			if ! [[ $gpg_exit_code -eq 0 ]]; then
-				ERROR "Signature verification failed, exit code $gpg_exit_code"
-			fi
-		fi
-	done
-
-	for ((ins=${#pkgs[@]}-1; ins>=0; ins--));do
-		downloadfile="$(basename $(se_wah ${pkgs[ins]} | grep '^FILE:' | cut -d ':' -f2))"
-		for usuario in $@; do
-			if ! [ "$usuario" = "$1" ]; then
-				if [ "$usuario" = "${pkgs[ins]}" ]; then
-					user=true
-					break
-				else
-					user=false
-				fi
+extpkg(){
+	if [ "${#nofind}" -gt 0 ]; then
+		errmsg="Package(s) no found: "
+		for nopkg in ${nofind[@]}; do
+			if [ "$nopkg" = "${nofind[${#nofind[@]}-1]}" ]; then
+				errmsg+="$nopkg"
+			else
+				errmsg+="$nopkg, "
 			fi
 		done
-
-		if [ -f "$downloadfile" ]; then
-			echo "Installing ${pkgs[ins]}..."
-			tar -xf $downloadfile -C $RootDir
-
-			mkdir -p "$LocalDir/${pkgs[ins]}"
-			mv $RootDir/.PKGINFO "$LocalDir/${pkgs[ins]}/PKGINFO"
-			echo "InstalledByUser=$user">>$LocalDir/${pkgs[ins]}/PKGINFO
-			if [ -f "$RootDir/.INSTALL" ]; then
-				mv $RootDir/.INSTALL "$LocalDir/${pkgs[ins]}/INSTALL"
-			fi
-		fi
-	done
-
-	primero=true
-	for ((ins=${#pkgs[@]}-1; ins>=0; ins--));do
-			if [ -f "$LocalDir/${pkgs[ins]}/INSTALL" ]; then
-				if $primero; then
-					echo
-					primero=false
-				fi
-				ins_script=$(cat $LocalDir/${pkgs[ins]}/INSTALL)
-
-				if [ "$RootDir" = "/" ]; then
-					exec_ins_script="$ins_script"
-				else
-					exec_ins_script=$(echo "$ins_script" | sed -E "s|(/[^ ]+)|$RootDir\1|g")
-				fi
-
-				cd $RootDir
-				source <(echo "$exec_ins_script")
-				if type post_install > /dev/null 2>&1; then
-					echo "Configuring ${pkgs[ins]}..."
-					post_install
-				fi
-				unset post_install post_upgrade post_remove pre_remove exec_ins_script ins_script
-			fi
-	done
-
-	unset pkgs
+		printf "\r\033[K"
+		ERROR "$errmsg"
+	fi
 }
 
 deps_wah(){
@@ -271,7 +165,6 @@ deps_wah(){
 		find=false
 
 		# traduce a paquete normal
-
 		if [[ "$dep" == *">"* ]]; then
 			cdep=${dep%%>*}
 		else
@@ -282,53 +175,163 @@ deps_wah(){
 			fi
 		fi
 
-		# ver si ya esta instalado
-		for insdeps in ${inspkgs[@]}; do
-			if [ "$insdeps" = "$cdep" ]; then
-				find=true
+		sdep=$(se_wah $cdep)
+
+		if [ -z "$(echo $sdep  | grep '^PKG:' | cut -d ':' -f2)" ]; then
+			nofind+=("$cdep")
+		else
+			agrega=true
+
+			for pkg in ${nextpkgs[@]}; do
+				if [ "$pkg" = "$(echo $sdep  | grep '^PKG:' | cut -d ':' -f2)" ]; then
+					agrega=false
+					break
+				fi
+			done
+
+			if $agrega; then
+				nextpkgs+=("$(echo $sdep  | grep '^PKG:' | cut -d ':' -f2)")
+			fi
+		fi
+	done
+	extpkg
+}
+
+install_wah(){
+	if [ $# -lt 2 ]; then
+		ERROR "Use $0 install [pkgs]"
+	fi
+	if ! [ -f "$SyncDir/$reponame.db" ]; then
+		ERROR "use $0 sync"
+	fi
+	if [ ! -d $CacheDir ]; then
+		mkdir -p $CacheDir
+	fi
+	cd $CacheDir
+
+	shift
+	for arg in $@; do
+		agrega=true
+		for pkg in ${args[@]}; do
+			if [ "$pkg" = "$arg" ]; then
+				agrega=false
 			fi
 		done
+		if $agrega; then
+			args+=("$arg")
+		fi
+	done
+	unset agrega
 
-		# Solo busca si no la a encontrado
-		if ! $find; then
-			sdep="$(se_wah $cdep | grep '^PKG:' | cut -d ':' -f2)"
-			if [ -z "$sdep" ]; then
-				ERROR "Dependence '$cdep' not found"
-			else
-				find=true
-				continue
-				#unset sdep
-			fi
+	for pkg in ${args[@]}; do
+		se_pkg="$(se_wah $pkg)"
+
+		if ! [ -z "$(echo "$se_pkg" | grep '^PKG:' | cut -d ':' -f2)" ]; then
+			nextpkgs+=("$(echo "$se_pkg" | grep '^PKG:' | cut -d ':' -f2)")
+		else
+			nofind+=("$pkg")
+		fi
+	done
+
+	printf "Processing, please wait..."
+	extpkg
+
+	for pkg in ${nextpkgs[@]}; do
+		deps="$(se_wah $pkg | grep '^DEPS:' | cut -d ':' -f2)"
+		if [ ! -z "$deps" ]; then
+			IFS=","
+			deps_wah $deps
+		fi
+	done
+	printf "\r\033[K"
+
+	echo "The following package(s) will be installed:"
+	for ((nxpkg=${#nextpkgs[@]}-1; nxpkg>=0; nxpkg--));do
+		echo "	$reponame/${nextpkgs[nxpkg]}"
+	done
+	printf "Continue with installation [Y/n] "
+	read -r confirm
+	confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
+	if ! [[ "$confirm" == 'y' || "$confirm" == '' ]]; then
+		echo "Exiting..."
+		exit 0
+	fi
+
+	# Downloading files
+	cd $CacheDir
+	for ((dlpkg=${#nextpkgs[@]}-1; dlpkg>=0; dlpkg--));do
+		downloadfile=$(se_wah ${nextpkgs[dlpkg]} | grep '^FILE:' | cut -d ':' -f2)
+
+		if [ ! -f "$(basename $downloadfile)" ]; then
+			wget $repourl/$downloadfile -qO $(basename $downloadfile) --show-progress
 		fi
 
-		# cuando la encuentre
-		agrrega=true
-		if $find; then
-			if ! [ -z "$sdep" ]; then
-				for ya in ${pkgs[@]}; do
-					if [ "$sdep" = "$ya" ]; then
-						agrrega=false
-						break
+		if [ ! -f "$(basename $downloadfile).sig" ]; then
+			wget $repourl/$downloadfile.sig -qO $(basename $downloadfile).sig
+		fi
+	done
+
+	echo
+
+	for ((pkg=0; pkg<=${#nextpkgs[@]}-1; pkg++));do
+		downloadfile=$(basename $(se_wah ${nextpkgs[pkg]} | grep '^FILE:' | cut -d ':' -f2))
+		hashpkg=$(se_wah ${nextpkgs[pkg]} | grep '^HASH:')
+		if [[ -f "$downloadfile"  &&  -f "$downloadfile.sig" ]]; then
+			gpg --verify $downloadfile.sig $downloadfile 2>/dev/null
+			gpg_exit_code=$?
+
+			if [ $gpg_exit_code -ne 0 ]; then
+				ERROR "Signature verification failed, gpg exit code $gpg_exit_code"
+			fi
+
+			case $(echo $hashpkg | cut -d ':' -f2) in
+				"SHA256")
+					if [ "$(sha256sum $downloadfile | cut -d ' ' -f1)" != "$(echo $hashpkg | cut -d ':' -f3)" ]; then
+						printf "\r\033[K"
+						ERROR "$downloadfile: checksum don't match"
 					fi
-				done
+				;;
+				*)
+					printf "\r\033[K"
+					ERROR "Unknow hash type: $(echo $hashpkg | cut -d ':' -f2) in"
+				;;
+			esac
 
-				if $agrrega; then
-					pkgs+=("$sdep")
-					unset sdep
-				fi
-				echo $agrrega . $sdep .
-
-				IFS=","
-				for depdep in $(se_wah $sdep | grep '^DEPS:' | cut -d ':' -f2); do
-					deps_wah $depdep
-				done
-				unset IFS
-			fi
+			printf "\rVerifying file integrity, %d of ${#nextpkgs[@]}" $pkg
+		else
+			ERROR "$downloadfile.sig don't exist"
 		fi
-		sdep=""
-		unset agrrega
+	done
+	printf "\r\033[KVerifying file integrity, Done!\n"
+
+	for ((extpkg=${#nextpkgs[@]}-1; extpkg>=0; extpkg--));do
+		downloadfile=$(basename $(se_wah ${nextpkgs[extpkg]} | grep '^FILE:' | cut -d ':' -f2))
+
+		if [ -f "$downloadfile" ];then
+			echo "Installing ${nextpkgs[extpkg]}..."
+			for user in $@; do
+				if [ "${nextpkgs[extpkg]}" = "$(se_wah $user | grep '^PKG:' | cut -d ':' -f2)" ]; then
+					isuser=true
+					break;
+				else
+					isuser=false
+				fi
+			done
+
+			tar -xf $downloadfile -C $RootDir
+			mkdir -p "$LocalDir/${nextpkgs[extpkg]}"
+			mv $RootDir/.PKGINFO "$LocalDir/${nextpkgs[extpkg]}/PKGINFO"
+			echo "InstalledByUser=$isuser">>$LocalDir/${nextpkgs[extpkg]}/PKGINFO
+			if [ -f "$RootDir/.INSTALL" ]; then
+				mv $RootDir/.INSTALL "$LocalDir/${nextpkgs[extpkg]}/INSTALL"
+			fi
+		else
+			ERROR "File $downloadfile not found"
+		fi
 	done
 }
+
+
 
 if [ $# -lt 1 ]; then
 	echo "Usage: $0 [option] <pkg>"
